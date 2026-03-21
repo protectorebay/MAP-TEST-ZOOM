@@ -21,41 +21,8 @@ html, body {
 #map {
   width: 100%;
   height: 100%;
-  position: relative;
 }
 
-.leaflet-container {
-  background: black !important;
-}
-
-/* 🔵 TARGET MARKER (FIXED) */
-.target {
-  width: 12px;
-  height: 12px;
-  border: 2px solid #00eaff;
-  border-radius: 50%;
-  position: relative;
-  z-index: 1000;
-  box-shadow: 0 0 10px #00eaff;
-}
-.target::after {
-  content: "";
-  position: absolute;
-  width: 6px;
-  height: 6px;
-  background: #00eaff;
-  border-radius: 50%;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
-
-/* 🔥 FORCE ABOVE MAP */
-.leaflet-marker-icon {
-  z-index: 1000 !important;
-}
-
-/* LABEL */
 .label {
   background: rgba(0,0,0,0.9);
   color: white;
@@ -65,7 +32,7 @@ html, body {
   font-size: 18px;
 }
 
-/* MARKER */
+/* veľké body */
 .marker {
   border-radius: 50%;
   position: relative;
@@ -74,7 +41,6 @@ html, body {
 .red { background: red; }
 .orange { background: orange; }
 
-/* PULSE */
 .pulse::after {
   content: "";
   position: absolute;
@@ -90,8 +56,8 @@ html, body {
 .pulse.orange::after { background: orange; }
 
 @keyframes pulse {
-  0%   { transform: scale(1); opacity: 1; }
-  70%  { transform: scale(2.5); opacity: 0; }
+  0% { transform: scale(1); opacity: 1; }
+  70% { transform: scale(2.5); opacity: 0; }
   100% { transform: scale(2.5); opacity: 0; }
 }
 </style>
@@ -107,14 +73,11 @@ html, body {
 const API_URL = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson";
 const MAPTILER_KEY = "sygtoTM5lxScVNfPR99k";
 
-/* MAP */
 let map = L.map('map', {
   zoomControl: false,
-  attributionControl: false,
-  worldCopyJump: false
+  attributionControl: false
 }).setView([10, 0], 2.8);
 
-/* Satellite */
 L.tileLayer(
   `https://api.maptiler.com/maps/satellite/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY}`,
   {
@@ -127,54 +90,17 @@ L.tileLayer(
 
 let markersLayer = L.layerGroup().addTo(map);
 
-const DEFAULT_CENTER = [10, 0];
-const DEFAULT_ZOOM = 2.8;
-
-let returnTimeout = null;
 let lastEventId = null;
 
-/* SIZE */
-function getSize(mag, base) {
-  if (!mag || mag < 2) return base;
-  if (mag < 3) return base + 3;
-  if (mag < 4) return base + 6;
-  if (mag < 5) return base + 9;
-  return base + 12;
-}
-
-/* CREATE MARKER */
-function createMarker(lat, lon, type, mag) {
-
-  if (type === "small") {
-    let el = document.createElement("div");
-    el.className = "target";
-
-    return L.marker([lat, lon], {
-      icon: L.divIcon({
-        html: el,
-        className: "",
-        iconSize: [14, 14],
-        iconAnchor: [7, 7]
-      })
-    });
-  }
-
-  let size = 15;
-
-  if (type === "latest") size = getSize(mag, 27);
-  else if (type === "secondary") size = getSize(mag, 18);
-
+/* veľké markery */
+function createBigMarker(lat, lon, type, size) {
   let el = document.createElement("div");
   el.className = "marker";
-
   el.style.width = size + "px";
   el.style.height = size + "px";
 
-  if (type === "latest") {
-    el.classList.add("red", "pulse");
-  } else if (type === "secondary") {
-    el.classList.add("orange", "pulse");
-  }
+  if (type === "latest") el.classList.add("red", "pulse");
+  if (type === "secondary") el.classList.add("orange", "pulse");
 
   return L.marker([lat, lon], {
     icon: L.divIcon({
@@ -184,17 +110,6 @@ function createMarker(lat, lon, type, mag) {
       iconAnchor: [size/2, size/2]
     })
   });
-}
-
-/* ZOOM */
-function focusOn(lat, lon) {
-  map.flyTo([lat, lon], 5, { duration: 2 });
-
-  if (returnTimeout) clearTimeout(returnTimeout);
-
-  returnTimeout = setTimeout(() => {
-    map.flyTo(DEFAULT_CENTER, DEFAULT_ZOOM, { duration: 2 });
-  }, 60000);
 }
 
 /* LOAD */
@@ -210,51 +125,43 @@ function loadData() {
       markersLayer.clearLayers();
 
       features.forEach((f, index) => {
-        let coords = f.geometry.coordinates;
-        let props = f.properties;
 
-        let lat = coords[1];
-        let lon = coords[0];
+        let lat = f.geometry.coordinates[1];
+        let lon = f.geometry.coordinates[0];
 
         if (lon < -160) lon += 360;
 
-        let type = "small";
-
-        if (index === 0) type = "latest";
-        else if (index === 1 || index === 2) type = "secondary";
+        let marker;
 
         if (index === 0) {
-          let currentId = f.id;
+          marker = createBigMarker(lat, lon, "latest", 28);
 
-          if (currentId !== lastEventId) {
-            lastEventId = currentId;
-
-            if (props.mag >= 5) {
-              focusOn(lat, lon);
-            }
-          }
-        }
-
-        let marker = createMarker(lat, lon, type, props.mag);
-        marker.addTo(markersLayer);
-
-        if (index === 0) {
-          let mag = props.mag ?? "?";
-          let place = props.place || "Unknown";
+          let mag = f.properties.mag ?? "?";
+          let place = f.properties.place || "Unknown";
 
           marker.bindTooltip(
             `<div class="label">M${mag} — ${place}</div>`,
-            {
-              permanent: true,
-              direction: "top",
-              offset: [0, -18]
-            }
+            { permanent: true, direction: "top", offset: [0, -20] }
           ).openTooltip();
+
+        } else if (index === 1 || index === 2) {
+          marker = createBigMarker(lat, lon, "secondary", 18);
+        } else {
+          // 🔥 TU JE FIX
+          marker = L.circleMarker([lat, lon], {
+            radius: 5,
+            color: "#00eaff",
+            weight: 2,
+            fillColor: "#00eaff",
+            fillOpacity: 1
+          });
         }
+
+        marker.addTo(markersLayer);
+
       });
 
-    })
-    .catch(err => console.log(err));
+    });
 }
 
 loadData();
