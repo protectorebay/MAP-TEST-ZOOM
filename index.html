@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title>Earthquake World Map</title>
 
-<meta name="viewport" content="width=2100, initial-scale=1.0">
+<meta name="viewport" content="width=1920, initial-scale=1.0">
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
@@ -12,8 +12,8 @@
 html, body {
   margin: 0;
   padding: 0;
-  width: 2100px;
-  height: 1200px;
+  width: 1920px;
+  height: 1080px;
   overflow: hidden;
   background: black;
 }
@@ -41,7 +41,7 @@ html, body {
   position: relative;
 }
 
-/* PULSE FIX */
+/* PULSE */
 .pulse::after {
   content: "";
   position: absolute;
@@ -78,29 +78,38 @@ html, body {
 const API_URL = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson";
 const MAPTILER_KEY = "sygtoTM5lxScVNfPR99k";
 
+/* WORLD BOUNDS */
+const WORLD_BOUNDS = [
+  [-85, -180],
+  [85, 180]
+];
+
 /* MAP INIT */
 let map = L.map('map', {
   zoomControl: false,
-  attributionControl: false
-}).setView([20, 0], 2);
+  attributionControl: false,
+  maxBounds: WORLD_BOUNDS,
+  maxBoundsViscosity: 1.0
+});
 
-/* MAP LAYER */
+/* TILE LAYER */
 L.tileLayer(
   `https://api.maptiler.com/maps/hybrid/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY}`,
   {
     tileSize: 512,
     zoomOffset: -1,
-    detectRetina: true
+    detectRetina: true,
+    noWrap: true
   }
 ).addTo(map);
+
+/* FIT WORLD */
+map.fitBounds(WORLD_BOUNDS);
 
 let markersLayer = L.layerGroup().addTo(map);
 
 /* DEFAULT VIEW */
-const DEFAULT_VIEW = {
-  center: [20, 0],
-  zoom: 2
-};
+const DEFAULT_VIEW = WORLD_BOUNDS;
 
 let returnTimeout = null;
 let lastEventId = null;
@@ -152,7 +161,7 @@ function focusOn(lat, lon) {
   if (returnTimeout) clearTimeout(returnTimeout);
 
   returnTimeout = setTimeout(() => {
-    map.flyTo(DEFAULT_VIEW.center, DEFAULT_VIEW.zoom, { duration: 2 });
+    map.fitBounds(WORLD_BOUNDS, { animate: true, duration: 2 });
   }, 60000);
 }
 
@@ -185,7 +194,6 @@ function loadData() {
 
         marker.addTo(markersLayer);
 
-        /* LATEST EVENT */
         if (index === 0) {
           let currentId = f.id;
 
