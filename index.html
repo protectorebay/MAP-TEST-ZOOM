@@ -35,7 +35,7 @@ html, body {
   border: 1px solid rgba(255,255,255,0.2);
 }
 
-/* BASE MARKER */
+/* MARKER BASE */
 .marker {
   border-radius: 50%;
   position: relative;
@@ -53,7 +53,6 @@ html, body {
   animation: pulse 2s infinite;
 }
 
-/* COLORS */
 .red { background: red; }
 .orange { background: orange; }
 
@@ -78,19 +77,12 @@ html, body {
 const API_URL = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson";
 const MAPTILER_KEY = "sygtoTM5lxScVNfPR99k";
 
-/* WORLD BOUNDS */
-const WORLD_BOUNDS = [
-  [-85, -180],
-  [85, 180]
-];
-
-/* MAP INIT */
+/* INIT MAP - FULL WIDTH OPTIMIZED */
 let map = L.map('map', {
   zoomControl: false,
   attributionControl: false,
-  maxBounds: WORLD_BOUNDS,
-  maxBoundsViscosity: 1.0
-});
+  worldCopyJump: false
+}).setView([15, 0], 2.4);
 
 /* TILE LAYER */
 L.tileLayer(
@@ -103,13 +95,11 @@ L.tileLayer(
   }
 ).addTo(map);
 
-/* FIT WORLD */
-map.fitBounds(WORLD_BOUNDS);
-
 let markersLayer = L.layerGroup().addTo(map);
 
 /* DEFAULT VIEW */
-const DEFAULT_VIEW = WORLD_BOUNDS;
+const DEFAULT_CENTER = [15, 0];
+const DEFAULT_ZOOM = 2.4;
 
 let returnTimeout = null;
 let lastEventId = null;
@@ -161,7 +151,7 @@ function focusOn(lat, lon) {
   if (returnTimeout) clearTimeout(returnTimeout);
 
   returnTimeout = setTimeout(() => {
-    map.fitBounds(WORLD_BOUNDS, { animate: true, duration: 2 });
+    map.flyTo(DEFAULT_CENTER, DEFAULT_ZOOM, { duration: 2 });
   }, 60000);
 }
 
