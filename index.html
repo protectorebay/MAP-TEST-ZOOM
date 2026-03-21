@@ -21,6 +21,35 @@ html, body {
 #map {
   width: 100%;
   height: 100%;
+  position: relative;
+}
+
+/* FORCE BLACK BACKGROUND */
+.leaflet-container {
+  background: black !important;
+}
+
+/* TOP/BOTTOM MASK (hide poles) */
+#map::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 120px;
+  background: linear-gradient(to bottom, black, transparent);
+  pointer-events: none;
+}
+
+#map::before {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 120px;
+  background: linear-gradient(to top, black, transparent);
+  pointer-events: none;
 }
 
 /* LABEL */
@@ -35,13 +64,12 @@ html, body {
   border: 1px solid rgba(255,255,255,0.2);
 }
 
-/* MARKER BASE */
+/* MARKERS */
 .marker {
   border-radius: 50%;
   position: relative;
 }
 
-/* PULSE */
 .pulse::after {
   content: "";
   position: absolute;
@@ -77,12 +105,12 @@ html, body {
 const API_URL = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson";
 const MAPTILER_KEY = "sygtoTM5lxScVNfPR99k";
 
-/* INIT MAP - FULL WIDTH OPTIMIZED */
+/* INIT MAP - FIXED VIEW */
 let map = L.map('map', {
   zoomControl: false,
   attributionControl: false,
   worldCopyJump: false
-}).setView([15, 0], 2.4);
+}).setView([10, 0], 2.8);
 
 /* TILE LAYER */
 L.tileLayer(
@@ -98,8 +126,8 @@ L.tileLayer(
 let markersLayer = L.layerGroup().addTo(map);
 
 /* DEFAULT VIEW */
-const DEFAULT_CENTER = [15, 0];
-const DEFAULT_ZOOM = 2.4;
+const DEFAULT_CENTER = [10, 0];
+const DEFAULT_ZOOM = 2.8;
 
 let returnTimeout = null;
 let lastEventId = null;
@@ -187,13 +215,11 @@ function loadData() {
         if (index === 0) {
           let currentId = f.id;
 
-          /* ZOOM LEN PRI NOVOM */
           if (currentId !== lastEventId) {
             lastEventId = currentId;
             focusOn(coords[1], coords[0]);
           }
 
-          /* LABEL */
           let mag = props.mag ?? "?";
           let place = props.place || "Unknown";
 
