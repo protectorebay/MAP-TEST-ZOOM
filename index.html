@@ -41,7 +41,12 @@ html, body {
   position: relative;
 }
 
-/* PULSE FIX */
+/* COLORS */
+.red { background: red; }
+.orange { background: orange; }
+.blue { background: #00aaff; }
+
+/* PULSE */
 .pulse::after {
   content: "";
   position: absolute;
@@ -52,10 +57,6 @@ html, body {
   border-radius: 50%;
   animation: pulse 2s infinite;
 }
-
-/* COLORS */
-.red { background: red; }
-.orange { background: orange; }
 
 .pulse.red::after { background: red; }
 .pulse.orange::after { background: orange; }
@@ -133,7 +134,7 @@ function createMarker(lat, lon, type, mag) {
   } else if (type === "secondary") {
     el.classList.add("orange", "pulse");
   } else {
-    el.classList.add("orange");
+    el.classList.add("blue"); // 🔵 zmena
   }
 
   return L.marker([lat, lon], {
@@ -185,17 +186,18 @@ function loadData() {
 
         marker.addTo(markersLayer);
 
-        /* LATEST EVENT */
         if (index === 0) {
           let currentId = f.id;
 
-          /* ZOOM LEN PRI NOVOM */
+          // 🔥 ZMENA 1: zoom len M5+
           if (currentId !== lastEventId) {
             lastEventId = currentId;
-            focusOn(coords[1], coords[0]);
+
+            if (props.mag >= 5) {
+              focusOn(coords[1], coords[0]);
+            }
           }
 
-          /* LABEL */
           let mag = props.mag ?? "?";
           let place = props.place || "Unknown";
 
@@ -214,7 +216,6 @@ function loadData() {
     .catch(err => console.log(err));
 }
 
-/* INIT */
 loadData();
 setInterval(loadData, 60000);
 </script>
