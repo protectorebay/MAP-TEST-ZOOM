@@ -28,34 +28,34 @@ html, body {
   background: black !important;
 }
 
-/* TARGET MARKER (black/white) */
+/* TARGET MARKER (blue) */
 .target {
-  width: 8px;
-  height: 8px;
-  border: 2px solid white;
+  width: 12px;
+  height: 12px;
+  border: 2px solid #00aaff;
   border-radius: 50%;
   position: relative;
 }
 .target::after {
   content: "";
   position: absolute;
-  width: 4px;
-  height: 4px;
-  background: white;
+  width: 6px;
+  height: 6px;
+  background: #00aaff;
   border-radius: 50%;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
 }
 
-/* LABEL */
+/* LABEL (bigger) */
 .label {
   background: rgba(0,0,0,0.9);
   color: white;
-  padding: 6px 10px;
+  padding: 8px 14px;
   border-radius: 6px;
   font-weight: bold;
-  font-size: 14px;
+  font-size: 18px;
 }
 
 /* MARKER */
@@ -129,14 +129,14 @@ let lastEventId = null;
 /* SIZE */
 function getSize(mag, base) {
   if (!mag || mag < 2) return base;
-  if (mag < 3) return base + 2;
-  if (mag < 4) return base + 4;
-  if (mag < 5) return base + 6;
-  return base + 8;
+  if (mag < 3) return base + 3;
+  if (mag < 4) return base + 6;
+  if (mag < 5) return base + 9;
+  return base + 12;
 }
 
 /* CREATE MARKER */
-function createMarker(lat, lon, type, mag, highlight=false) {
+function createMarker(lat, lon, type, mag) {
 
   if (type === "small") {
     let el = document.createElement("div");
@@ -146,15 +146,15 @@ function createMarker(lat, lon, type, mag, highlight=false) {
       icon: L.divIcon({
         html: el,
         className: "",
-        iconSize: [10, 10]
+        iconSize: [14, 14]
       })
     });
   }
 
-  let size = 10;
+  let size = 15;
 
-  if (type === "latest") size = getSize(mag, 18);
-  else if (type === "secondary") size = getSize(mag, 12);
+  if (type === "latest") size = getSize(mag, 27);
+  else if (type === "secondary") size = getSize(mag, 18);
 
   let el = document.createElement("div");
   el.className = "marker";
@@ -239,7 +239,7 @@ function loadData() {
             {
               permanent: true,
               direction: "top",
-              offset: [0, -15]
+              offset: [0, -18]
             }
           ).openTooltip();
         }
