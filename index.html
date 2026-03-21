@@ -107,7 +107,7 @@ let map = L.map('map', {
   worldCopyJump: false
 }).setView([10, 0], 2.8);
 
-/* Satellite Plain */
+/* Satellite */
 L.tileLayer(
   `https://api.maptiler.com/maps/satellite/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY}`,
   {
@@ -198,13 +198,25 @@ function loadData() {
 
       let bounds = map.getBounds();
 
+      // 1. visible quake
       let visible = data.features.filter(f => {
         let lat = f.geometry.coordinates[1];
         let lon = f.geometry.coordinates[0];
         return bounds.contains([lat, lon]);
       });
 
-      let features = visible.slice(0, 18);
+      // 2. fallback doplnenie
+      let features = [...visible];
+
+      for (let f of data.features) {
+        if (features.length >= 18) break;
+        if (!features.includes(f)) {
+          features.push(f);
+        }
+      }
+
+      // 3. finálne len 18
+      features = features.slice(0, 18);
 
       markersLayer.clearLayers();
 
