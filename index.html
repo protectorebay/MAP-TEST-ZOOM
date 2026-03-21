@@ -23,16 +23,16 @@ html, body {
   height: 100%;
 }
 
-/* LABEL */
+/* 🔴 UPDATED LABEL */
 .label {
-  background: rgba(0,0,0,0.85);
+  background: rgba(0,0,0,0.75);
   color: white;
-  padding: 6px 10px;
+  padding: 8px 12px;
   border-radius: 6px;
   font-size: 14px;
   font-weight: bold;
-  white-space: nowrap;
-  border: 1px solid rgba(255,255,255,0.2);
+  border: 2px solid red;
+  line-height: 1.2;
 }
 
 /* BASE MARKER */
@@ -134,7 +134,7 @@ function createMarker(lat, lon, type, mag) {
   } else if (type === "secondary") {
     el.classList.add("orange", "pulse");
   } else {
-    el.classList.add("blue"); // 🔵 zmena
+    el.classList.add("blue");
   }
 
   return L.marker([lat, lon], {
@@ -189,7 +189,6 @@ function loadData() {
         if (index === 0) {
           let currentId = f.id;
 
-          // 🔥 ZMENA 1: zoom len M5+
           if (currentId !== lastEventId) {
             lastEventId = currentId;
 
@@ -202,7 +201,7 @@ function loadData() {
           let place = props.place || "Unknown";
 
           marker.bindTooltip(
-            `<div class="label">M${mag} — ${place}</div>`,
+            `<div class="label">M${mag}<br>${place}</div>`,
             {
               permanent: true,
               direction: "top",
