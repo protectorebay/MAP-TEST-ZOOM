@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title>Earthquake World Map</title>
 
-<meta name="viewport" content="width=1920, initial-scale=1.0">
+<meta name="viewport" content="width=2100, initial-scale=1.0">
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
@@ -12,7 +12,7 @@
 html, body {
   margin: 0;
   padding: 0;
-  width: 1920px;
+  width: 2100px;
   height: 1080px;
   overflow: hidden;
   background: black;
@@ -139,16 +139,15 @@ html, body {
 const API_URL = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson";
 const MAPTILER_KEY = "sygtoTM5lxScVNfPR99k";
 
-/* MAP (BALANCED CENTER) */
+/* MAP */
 let map = L.map('map', {
   zoomControl: false,
   attributionControl: false,
   worldCopyJump: false
-}).setView([10, 100], 2.8);
+}).setView([10, 0], 2.8);
 
-/* TILE */
 L.tileLayer(
-  `https://api.maptiler.com/maps/bright-v2/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`,
+  `https://api.maptiler.com/maps/hybrid/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY}`,
   {
     tileSize: 512,
     zoomOffset: -1,
@@ -159,7 +158,7 @@ L.tileLayer(
 
 let markersLayer = L.layerGroup().addTo(map);
 
-const DEFAULT_CENTER = [10, 100];
+const DEFAULT_CENTER = [10, 0];
 const DEFAULT_ZOOM = 2.8;
 
 let returnTimeout = null;
@@ -198,7 +197,10 @@ function createMarker(lat, lon, type, mag, highlight=false) {
 
   if (highlight) {
     el.classList.add("highlight");
-    setTimeout(() => el.classList.remove("highlight"), 3000);
+
+    setTimeout(() => {
+      el.classList.remove("highlight");
+    }, 3000);
   }
 
   return L.marker([lat, lon], {
@@ -237,14 +239,6 @@ function loadData() {
         let coords = f.geometry.coordinates;
         let props = f.properties;
 
-        let lat = coords[1];
-        let lon = coords[0];
-
-        /* EDGE FIX */
-        if (lon < -160) {
-          lon = lon + 360;
-        }
-
         let type = "dot";
         if (index === 0) type = "latest";
         else if (index === 1 || index === 2) type = "secondary";
@@ -260,12 +254,19 @@ function loadData() {
             highlight = true;
 
             if (props.mag >= 5) {
-              focusOn(lat, lon);
+              focusOn(coords[1], coords[0]);
             }
           }
         }
 
-        let marker = createMarker(lat, lon, type, props.mag, highlight);
+        let marker = createMarker(
+          coords[1],
+          coords[0],
+          type,
+          props.mag,
+          highlight
+        );
+
         marker.addTo(markersLayer);
 
         if (index === 0) {
@@ -287,6 +288,7 @@ function loadData() {
     .catch(err => console.log(err));
 }
 
+/* INIT */
 loadData();
 setInterval(loadData, 30000);
 </script>
