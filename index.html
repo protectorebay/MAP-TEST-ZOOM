@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title>Earthquake World Map</title>
 
-<meta name="viewport" content="width=2100, initial-scale=1.0">
+<meta name="viewport" content="width=2300, initial-scale=1.0">
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
@@ -12,7 +12,7 @@
 html, body {
   margin: 0;
   padding: 0;
-  width: 2100px;
+  width: 2300px;
   height: 1080px;
   overflow: hidden;
   background: black;
@@ -48,7 +48,7 @@ html, body {
   transform: translate(-50%, -50%);
 }
 
-/* LABEL (bigger) */
+/* LABEL */
 .label {
   background: rgba(0,0,0,0.9);
   color: white;
@@ -196,7 +196,15 @@ function loadData() {
 
       if (!data.features) return;
 
-      let features = data.features.slice(0, 18);
+      let bounds = map.getBounds();
+
+      let visible = data.features.filter(f => {
+        let lat = f.geometry.coordinates[1];
+        let lon = f.geometry.coordinates[0];
+        return bounds.contains([lat, lon]);
+      });
+
+      let features = visible.slice(0, 18);
 
       markersLayer.clearLayers();
 
