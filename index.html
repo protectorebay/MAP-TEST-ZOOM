@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Earthquake Map</title>
+<title>Earthquake World Map</title>
 
-<meta name="viewport" content="width=2300, initial-scale=1.0">
+<meta name="viewport" content="width=1920, initial-scale=1.0">
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
@@ -12,7 +12,7 @@
 html, body {
   margin: 0;
   padding: 0;
-  width: 2300px;
+  width: 1920px;
   height: 1080px;
   overflow: hidden;
   background: black;
@@ -21,6 +21,110 @@ html, body {
 #map {
   width: 100%;
   height: 100%;
+  position: relative;
+}
+
+.leaflet-container {
+  background: black !important;
+}
+
+/* MASK */
+#map::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 100%;
+  height: 120px;
+  background: linear-gradient(to bottom, black, transparent);
+  pointer-events: none;
+}
+#map::before {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 120px;
+  background: linear-gradient(to top, black, transparent);
+  pointer-events: none;
+}
+
+/* LABEL */
+.label {
+  background: rgba(0,0,0,0.9);
+  color: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+/* MARKER */
+.marker {
+  border-radius: 50%;
+  position: relative;
+}
+
+.red { background: red; }
+.orange { background: orange; }
+
+/* PULSE */
+.pulse::after {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  left: 0;
+  top: 0;
+  animation: pulse 2s infinite;
+}
+
+.pulse.red::after { background: red; }
+.pulse.orange::after { background: orange; }
+
+/* HIGHLIGHT */
+.highlight {
+  z-index: 999;
+}
+
+.highlight::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 3px solid orange;
+  transform: translate(-50%, -50%);
+  animation: shockwave 1.5s ease-out 2;
+}
+
+.highlight::before {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: orange;
+  animation: pop 0.4s ease-out;
+}
+
+@keyframes pulse {
+  0%   { transform: scale(1); opacity: 1; }
+  70%  { transform: scale(2.5); opacity: 0; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+@keyframes shockwave {
+  0%   { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(6); opacity: 0; }
+}
+
+@keyframes pop {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.8); }
+  100% { transform: scale(1); }
 }
 </style>
 </head>
@@ -38,12 +142,12 @@ const MAPTILER_KEY = "sygtoTM5lxScVNfPR99k";
 /* MAP */
 let map = L.map('map', {
   zoomControl: false,
-  attributionControl: false
+  attributionControl: false,
+  worldCopyJump: false
 }).setView([10, 0], 2.8);
 
-/* Satellite */
 L.tileLayer(
-  `https://api.maptiler.com/maps/satellite/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY}`,
+  `https://api.maptiler.com/maps/hybrid/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY}`,
   {
     tileSize: 512,
     zoomOffset: -1,
@@ -52,7 +156,73 @@ L.tileLayer(
   }
 ).addTo(map);
 
-let layer = L.layerGroup().addTo(map);
+let markersLayer = L.layerGroup().addTo(map);
+
+const DEFAULT_CENTER = [10, 0];
+const DEFAULT_ZOOM = 2.8;
+
+let returnTimeout = null;
+let lastEventId = null;
+let lastHighlightedId = null; // 🔥 FIX
+
+/* SIZE */
+function getSize(mag, base) {
+  if (!mag || mag < 2) return base;
+  if (mag < 3) return base + 2;
+  if (mag < 4) return base + 4;
+  if (mag < 5) return base + 6;
+  return base + 8;
+}
+
+/* CREATE MARKER */
+function createMarker(lat, lon, type, mag, highlight=false) {
+  let size = 10;
+
+  if (type === "latest") size = getSize(mag, 18);
+  else if (type === "secondary") size = getSize(mag, 12);
+  else size = getSize(mag, 8);
+
+  let el = document.createElement("div");
+  el.className = "marker";
+
+  el.style.width = size + "px";
+  el.style.height = size + "px";
+
+  if (type === "latest") {
+    el.classList.add("red", "pulse");
+  } else if (type === "secondary") {
+    el.classList.add("orange", "pulse");
+  } else {
+    el.classList.add("orange");
+  }
+
+  if (highlight) {
+    el.classList.add("highlight");
+
+    setTimeout(() => {
+      el.classList.remove("highlight");
+    }, 3000);
+  }
+
+  return L.marker([lat, lon], {
+    icon: L.divIcon({
+      html: el,
+      className: "",
+      iconSize: [size, size]
+    })
+  });
+}
+
+/* ZOOM */
+function focusOn(lat, lon) {
+  map.flyTo([lat, lon], 5, { duration: 2 });
+
+  if (returnTimeout) clearTimeout(returnTimeout);
+
+  returnTimeout = setTimeout(() => {
+    map.flyTo(DEFAULT_CENTER, DEFAULT_ZOOM, { duration: 2 });
+  }, 60000);
+}
 
 /* LOAD */
 function loadData() {
@@ -62,36 +232,66 @@ function loadData() {
 
       if (!data.features) return;
 
-      let features = data.features.slice(0, 15);
+      let features = data.features.slice(0, 20);
 
-      layer.clearLayers();
+      markersLayer.clearLayers();
 
       features.forEach((f, index) => {
+        let coords = f.geometry.coordinates;
+        let props = f.properties;
 
-        let lat = f.geometry.coordinates[1];
-        let lon = f.geometry.coordinates[0];
+        let type = "dot";
+        if (index === 0) type = "latest";
+        else if (index === 1 || index === 2) type = "secondary";
 
-        // edge fix
-        if (lon < -160) lon += 360;
+        let highlight = false;
 
-        let isLatest = index === 0;
+        /* 🔥 FIXED HIGHLIGHT LOGIC */
+        if (f.id !== lastHighlightedId && props.mag < 5) {
+          highlight = true;
+          lastHighlightedId = f.id;
+        }
 
-        let marker = L.circleMarker([lat, lon], {
-          radius: isLatest ? 12 : 10,
-          color: isLatest ? "red" : "#00ff00",
-          fillColor: isLatest ? "red" : "#00ff00",
-          fillOpacity: 1,
-          weight: 2
-        });
+        let marker = createMarker(
+          coords[1],
+          coords[0],
+          type,
+          props.mag,
+          highlight
+        );
 
-        marker.addTo(layer);
+        marker.addTo(markersLayer);
 
+        if (index === 0) {
+          let currentId = f.id;
+
+          if (currentId !== lastEventId) {
+            lastEventId = currentId;
+
+            if (props.mag >= 5) {
+              focusOn(coords[1], coords[0]);
+            }
+          }
+
+          let mag = props.mag ?? "?";
+          let place = props.place || "Unknown";
+
+          marker.bindTooltip(
+            `<div class="label">M${mag} — ${place}</div>`,
+            {
+              permanent: true,
+              direction: "top",
+              offset: [0, -15]
+            }
+          ).openTooltip();
+        }
       });
 
     })
     .catch(err => console.log(err));
 }
 
+/* INIT */
 loadData();
 setInterval(loadData, 30000);
 </script>
