@@ -146,7 +146,8 @@ function createMarker(lat, lon, type, mag) {
       icon: L.divIcon({
         html: el,
         className: "",
-        iconSize: [14, 14]
+        iconSize: [14, 14],
+        iconAnchor: [7, 7] // 🔥 FIX
       })
     });
   }
@@ -172,7 +173,8 @@ function createMarker(lat, lon, type, mag) {
     icon: L.divIcon({
       html: el,
       className: "",
-      iconSize: [size, size]
+      iconSize: [size, size],
+      iconAnchor: [size/2, size/2]
     })
   });
 }
@@ -207,10 +209,7 @@ function loadData() {
         let lat = coords[1];
         let lon = coords[0];
 
-        /* 🔥 EDGE FIX */
-        if (lon < -160) {
-          lon += 360;
-        }
+        if (lon < -160) lon += 360;
 
         let type = "small";
 
@@ -230,7 +229,6 @@ function loadData() {
         }
 
         let marker = createMarker(lat, lon, type, props.mag);
-
         marker.addTo(markersLayer);
 
         if (index === 0) {
