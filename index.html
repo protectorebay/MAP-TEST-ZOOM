@@ -146,8 +146,9 @@ let map = L.map('map', {
   worldCopyJump: false
 }).setView([10, 0], 2.8);
 
+/* TILE */
 L.tileLayer(
-  `https://api.maptiler.com/maps/hybrid/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY}`,
+  `https://api.maptiler.com/maps/bright-v2/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`,
   {
     tileSize: 512,
     zoomOffset: -1,
@@ -197,10 +198,7 @@ function createMarker(lat, lon, type, mag, highlight=false) {
 
   if (highlight) {
     el.classList.add("highlight");
-
-    setTimeout(() => {
-      el.classList.remove("highlight");
-    }, 3000);
+    setTimeout(() => el.classList.remove("highlight"), 3000);
   }
 
   return L.marker([lat, lon], {
@@ -239,6 +237,14 @@ function loadData() {
         let coords = f.geometry.coordinates;
         let props = f.properties;
 
+        let lat = coords[1];
+        let lon = coords[0];
+
+        /* 🔥 EDGE FIX (Alaska / Pacific) */
+        if (lon < -160) {
+          lon = lon + 360;
+        }
+
         let type = "dot";
         if (index === 0) type = "latest";
         else if (index === 1 || index === 2) type = "secondary";
@@ -251,22 +257,15 @@ function loadData() {
           if (currentId !== lastEventId) {
             lastEventId = currentId;
 
-            highlight = true; // 🔥 LEN PRI NOVOM QUAKE
+            highlight = true;
 
             if (props.mag >= 5) {
-              focusOn(coords[1], coords[0]);
+              focusOn(lat, lon);
             }
           }
         }
 
-        let marker = createMarker(
-          coords[1],
-          coords[0],
-          type,
-          props.mag,
-          highlight
-        );
-
+        let marker = createMarker(lat, lon, type, props.mag, highlight);
         marker.addTo(markersLayer);
 
         if (index === 0) {
@@ -288,7 +287,6 @@ function loadData() {
     .catch(err => console.log(err));
 }
 
-/* INIT */
 loadData();
 setInterval(loadData, 30000);
 </script>
