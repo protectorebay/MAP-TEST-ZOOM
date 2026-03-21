@@ -67,7 +67,7 @@ html, body {
 .red { background: red; }
 .orange { background: orange; }
 
-/* STANDARD PULSE */
+/* PULSE */
 .pulse::after {
   content: "";
   position: absolute;
@@ -82,17 +82,34 @@ html, body {
 .pulse.red::after { background: red; }
 .pulse.orange::after { background: orange; }
 
-/* STRONG HIGHLIGHT (NO ZOOM) */
+/* 🔥 STRONG HIGHLIGHT */
+.highlight {
+  z-index: 999;
+}
+
+/* SHOCKWAVE */
 .highlight::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 3px solid orange;
+  transform: translate(-50%, -50%);
+  animation: shockwave 1.5s ease-out 2;
+}
+
+/* POP */
+.highlight::before {
   content: "";
   position: absolute;
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  left: 0;
-  top: 0;
   background: orange;
-  animation: highlightPulse 1s ease-out 3;
+  animation: pop 0.4s ease-out;
 }
 
 @keyframes pulse {
@@ -101,9 +118,15 @@ html, body {
   100% { transform: scale(2.5); opacity: 0; }
 }
 
-@keyframes highlightPulse {
-  0%   { transform: scale(1); opacity: 1; }
-  100% { transform: scale(3.5); opacity: 0; }
+@keyframes shockwave {
+  0%   { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(6); opacity: 0; }
+}
+
+@keyframes pop {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.8); }
+  100% { transform: scale(1); }
 }
 </style>
 </head>
@@ -176,6 +199,10 @@ function createMarker(lat, lon, type, mag, highlight=false) {
 
   if (highlight) {
     el.classList.add("highlight");
+
+    setTimeout(() => {
+      el.classList.remove("highlight");
+    }, 3000);
   }
 
   return L.marker([lat, lon], {
@@ -220,12 +247,17 @@ function loadData() {
 
         let isNew = (f.id !== lastEventId);
 
+        let highlight = false;
+        if (isNew && props.mag < 5) {
+          highlight = true;
+        }
+
         let marker = createMarker(
           coords[1],
           coords[0],
           type,
           props.mag,
-          isNew && props.mag < 5 // highlight only for small quakes
+          highlight
         );
 
         marker.addTo(markersLayer);
@@ -234,7 +266,6 @@ function loadData() {
           if (isNew) {
             lastEventId = f.id;
 
-            /* ZOOM ONLY FOR M5+ */
             if (props.mag >= 5) {
               focusOn(coords[1], coords[0]);
             }
