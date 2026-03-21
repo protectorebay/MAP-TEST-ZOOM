@@ -82,12 +82,11 @@ html, body {
 .pulse.red::after { background: red; }
 .pulse.orange::after { background: orange; }
 
-/* 🔥 STRONG HIGHLIGHT */
+/* HIGHLIGHT */
 .highlight {
   z-index: 999;
 }
 
-/* SHOCKWAVE */
 .highlight::after {
   content: "";
   position: absolute;
@@ -101,7 +100,6 @@ html, body {
   animation: shockwave 1.5s ease-out 2;
 }
 
-/* POP */
 .highlight::before {
   content: "";
   position: absolute;
@@ -165,6 +163,7 @@ const DEFAULT_ZOOM = 2.8;
 
 let returnTimeout = null;
 let lastEventId = null;
+let lastHighlightedId = null; // 🔥 FIX
 
 /* SIZE */
 function getSize(mag, base) {
@@ -245,11 +244,12 @@ function loadData() {
         if (index === 0) type = "latest";
         else if (index === 1 || index === 2) type = "secondary";
 
-        let isNew = (f.id !== lastEventId);
-
         let highlight = false;
-        if (isNew && props.mag < 5) {
+
+        /* 🔥 FIXED HIGHLIGHT LOGIC */
+        if (f.id !== lastHighlightedId && props.mag < 5) {
           highlight = true;
+          lastHighlightedId = f.id;
         }
 
         let marker = createMarker(
@@ -263,8 +263,10 @@ function loadData() {
         marker.addTo(markersLayer);
 
         if (index === 0) {
-          if (isNew) {
-            lastEventId = f.id;
+          let currentId = f.id;
+
+          if (currentId !== lastEventId) {
+            lastEventId = currentId;
 
             if (props.mag >= 5) {
               focusOn(coords[1], coords[0]);
@@ -289,8 +291,9 @@ function loadData() {
     .catch(err => console.log(err));
 }
 
+/* INIT */
 loadData();
-setInterval(loadData, 60000);
+setInterval(loadData, 30000);
 </script>
 
 </body>
