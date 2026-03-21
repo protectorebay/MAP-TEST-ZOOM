@@ -28,24 +28,24 @@ html, body {
   background: black !important;
 }
 
-/* MASK */
-#map::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  width: 100%;
-  height: 120px;
-  background: linear-gradient(to bottom, black, transparent);
-  pointer-events: none;
+/* TARGET MARKER (black/white) */
+.target {
+  width: 8px;
+  height: 8px;
+  border: 2px solid white;
+  border-radius: 50%;
+  position: relative;
 }
-#map::before {
+.target::after {
   content: "";
   position: absolute;
-  bottom: 0;
-  width: 100%;
-  height: 120px;
-  background: linear-gradient(to top, black, transparent);
-  pointer-events: none;
+  width: 4px;
+  height: 4px;
+  background: white;
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 /* LABEL */
@@ -82,49 +82,10 @@ html, body {
 .pulse.red::after { background: red; }
 .pulse.orange::after { background: orange; }
 
-/* HIGHLIGHT */
-.highlight {
-  z-index: 999;
-}
-
-.highlight::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  border: 3px solid orange;
-  transform: translate(-50%, -50%);
-  animation: shockwave 1.5s ease-out 2;
-}
-
-.highlight::before {
-  content: "";
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  background: orange;
-  animation: pop 0.4s ease-out;
-}
-
 @keyframes pulse {
   0%   { transform: scale(1); opacity: 1; }
   70%  { transform: scale(2.5); opacity: 0; }
   100% { transform: scale(2.5); opacity: 0; }
-}
-
-@keyframes shockwave {
-  0%   { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-  100% { transform: translate(-50%, -50%) scale(6); opacity: 0; }
-}
-
-@keyframes pop {
-  0%   { transform: scale(1); }
-  50%  { transform: scale(1.8); }
-  100% { transform: scale(1); }
 }
 </style>
 </head>
@@ -146,8 +107,9 @@ let map = L.map('map', {
   worldCopyJump: false
 }).setView([10, 0], 2.8);
 
+/* Satellite Plain */
 L.tileLayer(
-  `https://api.maptiler.com/maps/hybrid/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY}`,
+  `https://api.maptiler.com/maps/satellite/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY}`,
   {
     tileSize: 512,
     zoomOffset: -1,
@@ -175,11 +137,24 @@ function getSize(mag, base) {
 
 /* CREATE MARKER */
 function createMarker(lat, lon, type, mag, highlight=false) {
+
+  if (type === "small") {
+    let el = document.createElement("div");
+    el.className = "target";
+
+    return L.marker([lat, lon], {
+      icon: L.divIcon({
+        html: el,
+        className: "",
+        iconSize: [10, 10]
+      })
+    });
+  }
+
   let size = 10;
 
   if (type === "latest") size = getSize(mag, 18);
   else if (type === "secondary") size = getSize(mag, 12);
-  else size = getSize(mag, 8);
 
   let el = document.createElement("div");
   el.className = "marker";
@@ -191,16 +166,6 @@ function createMarker(lat, lon, type, mag, highlight=false) {
     el.classList.add("red", "pulse");
   } else if (type === "secondary") {
     el.classList.add("orange", "pulse");
-  } else {
-    el.classList.add("orange");
-  }
-
-  if (highlight) {
-    el.classList.add("highlight");
-
-    setTimeout(() => {
-      el.classList.remove("highlight");
-    }, 3000);
   }
 
   return L.marker([lat, lon], {
@@ -231,7 +196,7 @@ function loadData() {
 
       if (!data.features) return;
 
-      let features = data.features.slice(0, 20);
+      let features = data.features.slice(0, 18);
 
       markersLayer.clearLayers();
 
@@ -239,19 +204,16 @@ function loadData() {
         let coords = f.geometry.coordinates;
         let props = f.properties;
 
-        let type = "dot";
+        let type = "small";
+
         if (index === 0) type = "latest";
         else if (index === 1 || index === 2) type = "secondary";
-
-        let highlight = false;
 
         if (index === 0) {
           let currentId = f.id;
 
           if (currentId !== lastEventId) {
             lastEventId = currentId;
-
-            highlight = true;
 
             if (props.mag >= 5) {
               focusOn(coords[1], coords[0]);
@@ -263,8 +225,7 @@ function loadData() {
           coords[1],
           coords[0],
           type,
-          props.mag,
-          highlight
+          props.mag
         );
 
         marker.addTo(markersLayer);
@@ -288,7 +249,6 @@ function loadData() {
     .catch(err => console.log(err));
 }
 
-/* INIT */
 loadData();
 setInterval(loadData, 30000);
 </script>
