@@ -139,12 +139,12 @@ html, body {
 const API_URL = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson";
 const MAPTILER_KEY = "sygtoTM5lxScVNfPR99k";
 
-/* MAP */
+/* MAP (BALANCED CENTER) */
 let map = L.map('map', {
   zoomControl: false,
   attributionControl: false,
   worldCopyJump: false
-}).setView([10, 0], 2.8);
+}).setView([10, 100], 2.8);
 
 /* TILE */
 L.tileLayer(
@@ -159,7 +159,7 @@ L.tileLayer(
 
 let markersLayer = L.layerGroup().addTo(map);
 
-const DEFAULT_CENTER = [10, 0];
+const DEFAULT_CENTER = [10, 100];
 const DEFAULT_ZOOM = 2.8;
 
 let returnTimeout = null;
@@ -240,7 +240,7 @@ function loadData() {
         let lat = coords[1];
         let lon = coords[0];
 
-        /* 🔥 EDGE FIX (Alaska / Pacific) */
+        /* EDGE FIX */
         if (lon < -160) {
           lon = lon + 360;
         }
