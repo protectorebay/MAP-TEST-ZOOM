@@ -28,24 +28,31 @@ html, body {
   background: black !important;
 }
 
-/* TARGET MARKER (blue) */
+/* 🔵 TARGET MARKER (FIXED) */
 .target {
   width: 12px;
   height: 12px;
-  border: 2px solid #00aaff;
+  border: 2px solid #00eaff;
   border-radius: 50%;
   position: relative;
+  z-index: 1000;
+  box-shadow: 0 0 10px #00eaff;
 }
 .target::after {
   content: "";
   position: absolute;
   width: 6px;
   height: 6px;
-  background: #00aaff;
+  background: #00eaff;
   border-radius: 50%;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+}
+
+/* 🔥 FORCE ABOVE MAP */
+.leaflet-marker-icon {
+  z-index: 1000 !important;
 }
 
 /* LABEL */
@@ -147,7 +154,7 @@ function createMarker(lat, lon, type, mag) {
         html: el,
         className: "",
         iconSize: [14, 14],
-        iconAnchor: [7, 7] // 🔥 FIX
+        iconAnchor: [7, 7]
       })
     });
   }
