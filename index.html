@@ -196,33 +196,21 @@ function loadData() {
 
       if (!data.features) return;
 
-      let bounds = map.getBounds();
-
-      // 1. visible quake
-      let visible = data.features.filter(f => {
-        let lat = f.geometry.coordinates[1];
-        let lon = f.geometry.coordinates[0];
-        return bounds.contains([lat, lon]);
-      });
-
-      // 2. fallback doplnenie
-      let features = [...visible];
-
-      for (let f of data.features) {
-        if (features.length >= 18) break;
-        if (!features.includes(f)) {
-          features.push(f);
-        }
-      }
-
-      // 3. finálne len 18
-      features = features.slice(0, 18);
+      let features = data.features.slice(0, 18);
 
       markersLayer.clearLayers();
 
       features.forEach((f, index) => {
         let coords = f.geometry.coordinates;
         let props = f.properties;
+
+        let lat = coords[1];
+        let lon = coords[0];
+
+        /* 🔥 EDGE FIX */
+        if (lon < -160) {
+          lon += 360;
+        }
 
         let type = "small";
 
@@ -236,17 +224,12 @@ function loadData() {
             lastEventId = currentId;
 
             if (props.mag >= 5) {
-              focusOn(coords[1], coords[0]);
+              focusOn(lat, lon);
             }
           }
         }
 
-        let marker = createMarker(
-          coords[1],
-          coords[0],
-          type,
-          props.mag
-        );
+        let marker = createMarker(lat, lon, type, props.mag);
 
         marker.addTo(markersLayer);
 
