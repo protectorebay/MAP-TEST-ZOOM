@@ -23,7 +23,18 @@ html, body {
   height: 100%;
 }
 
-/* 🔴 UPDATED LABEL */
+/* 🔥 REMOVE LEAFLET WHITE BOX */
+.leaflet-tooltip {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.leaflet-tooltip-top:before {
+  display: none;
+}
+
+/* LABEL */
 .label {
   background: rgba(0,0,0,0.75);
   color: white;
