@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Earthquake World Map</title>
+<title>Earthquake Map</title>
 
 <meta name="viewport" content="width=2300, initial-scale=1.0">
 
@@ -22,44 +22,6 @@ html, body {
   width: 100%;
   height: 100%;
 }
-
-.label {
-  background: rgba(0,0,0,0.9);
-  color: white;
-  padding: 8px 14px;
-  border-radius: 6px;
-  font-weight: bold;
-  font-size: 18px;
-}
-
-/* veľké body */
-.marker {
-  border-radius: 50%;
-  position: relative;
-}
-
-.red { background: red; }
-.orange { background: orange; }
-
-.pulse::after {
-  content: "";
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  left: 0;
-  top: 0;
-  animation: pulse 2s infinite;
-}
-
-.pulse.red::after { background: red; }
-.pulse.orange::after { background: orange; }
-
-@keyframes pulse {
-  0% { transform: scale(1); opacity: 1; }
-  70% { transform: scale(2.5); opacity: 0; }
-  100% { transform: scale(2.5); opacity: 0; }
-}
 </style>
 </head>
 
@@ -73,11 +35,13 @@ html, body {
 const API_URL = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson";
 const MAPTILER_KEY = "sygtoTM5lxScVNfPR99k";
 
+/* MAP */
 let map = L.map('map', {
   zoomControl: false,
   attributionControl: false
 }).setView([10, 0], 2.8);
 
+/* Satellite */
 L.tileLayer(
   `https://api.maptiler.com/maps/satellite/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY}`,
   {
@@ -88,29 +52,7 @@ L.tileLayer(
   }
 ).addTo(map);
 
-let markersLayer = L.layerGroup().addTo(map);
-
-let lastEventId = null;
-
-/* veľké markery */
-function createBigMarker(lat, lon, type, size) {
-  let el = document.createElement("div");
-  el.className = "marker";
-  el.style.width = size + "px";
-  el.style.height = size + "px";
-
-  if (type === "latest") el.classList.add("red", "pulse");
-  if (type === "secondary") el.classList.add("orange", "pulse");
-
-  return L.marker([lat, lon], {
-    icon: L.divIcon({
-      html: el,
-      className: "",
-      iconSize: [size, size],
-      iconAnchor: [size/2, size/2]
-    })
-  });
-}
+let layer = L.layerGroup().addTo(map);
 
 /* LOAD */
 function loadData() {
@@ -120,48 +62,34 @@ function loadData() {
 
       if (!data.features) return;
 
-      let features = data.features.slice(0, 18);
+      let features = data.features.slice(0, 15);
 
-      markersLayer.clearLayers();
+      layer.clearLayers();
 
       features.forEach((f, index) => {
 
         let lat = f.geometry.coordinates[1];
         let lon = f.geometry.coordinates[0];
 
+        // edge fix
         if (lon < -160) lon += 360;
 
-        let marker;
+        let isLatest = index === 0;
 
-        if (index === 0) {
-          marker = createBigMarker(lat, lon, "latest", 28);
+        let marker = L.circleMarker([lat, lon], {
+          radius: isLatest ? 12 : 10,
+          color: isLatest ? "red" : "#00ff00",
+          fillColor: isLatest ? "red" : "#00ff00",
+          fillOpacity: 1,
+          weight: 2
+        });
 
-          let mag = f.properties.mag ?? "?";
-          let place = f.properties.place || "Unknown";
-
-          marker.bindTooltip(
-            `<div class="label">M${mag} — ${place}</div>`,
-            { permanent: true, direction: "top", offset: [0, -20] }
-          ).openTooltip();
-
-        } else if (index === 1 || index === 2) {
-          marker = createBigMarker(lat, lon, "secondary", 18);
-        } else {
-          // 🔥 TU JE FIX
-          marker = L.circleMarker([lat, lon], {
-            radius: 5,
-            color: "#00eaff",
-            weight: 2,
-            fillColor: "#00eaff",
-            fillOpacity: 1
-          });
-        }
-
-        marker.addTo(markersLayer);
+        marker.addTo(layer);
 
       });
 
-    });
+    })
+    .catch(err => console.log(err));
 }
 
 loadData();
