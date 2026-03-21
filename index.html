@@ -163,7 +163,6 @@ const DEFAULT_ZOOM = 2.8;
 
 let returnTimeout = null;
 let lastEventId = null;
-let lastHighlightedId = null; // 🔥 FIX
 
 /* SIZE */
 function getSize(mag, base) {
@@ -246,10 +245,18 @@ function loadData() {
 
         let highlight = false;
 
-        /* 🔥 FIXED HIGHLIGHT LOGIC */
-        if (f.id !== lastHighlightedId && props.mag < 5) {
-          highlight = true;
-          lastHighlightedId = f.id;
+        if (index === 0) {
+          let currentId = f.id;
+
+          if (currentId !== lastEventId) {
+            lastEventId = currentId;
+
+            highlight = true; // 🔥 LEN PRI NOVOM QUAKE
+
+            if (props.mag >= 5) {
+              focusOn(coords[1], coords[0]);
+            }
+          }
         }
 
         let marker = createMarker(
@@ -263,16 +270,6 @@ function loadData() {
         marker.addTo(markersLayer);
 
         if (index === 0) {
-          let currentId = f.id;
-
-          if (currentId !== lastEventId) {
-            lastEventId = currentId;
-
-            if (props.mag >= 5) {
-              focusOn(coords[1], coords[0]);
-            }
-          }
-
           let mag = props.mag ?? "?";
           let place = props.place || "Unknown";
 
