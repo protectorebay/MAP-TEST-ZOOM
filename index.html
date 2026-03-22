@@ -23,13 +23,12 @@ html, body {
   height: 100%;
 }
 
-/* 🔥 REMOVE LEAFLET WHITE BOX */
+/* REMOVE LEAFLET BOX */
 .leaflet-tooltip {
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
 }
-
 .leaflet-tooltip-top:before {
   display: none;
 }
@@ -46,13 +45,12 @@ html, body {
   line-height: 1.2;
 }
 
-/* BASE MARKER */
+/* MARKERS */
 .marker {
   border-radius: 50%;
   position: relative;
 }
 
-/* COLORS */
 .red { background: red; }
 .orange { background: orange; }
 .blue { background: #00aaff; }
@@ -73,8 +71,8 @@ html, body {
 .pulse.orange::after { background: orange; }
 
 @keyframes pulse {
-  0%   { transform: scale(1); opacity: 1; }
-  70%  { transform: scale(2.5); opacity: 0; }
+  0% { transform: scale(1); opacity: 1; }
+  70% { transform: scale(2.5); opacity: 0; }
   100% { transform: scale(2.5); opacity: 0; }
 }
 </style>
@@ -90,13 +88,12 @@ html, body {
 const API_URL = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson";
 const MAPTILER_KEY = "sygtoTM5lxScVNfPR99k";
 
-/* MAP INIT */
+/* MAP */
 let map = L.map('map', {
   zoomControl: false,
   attributionControl: false
 }).setView([20, 0], 2);
 
-/* MAP LAYER */
 L.tileLayer(
   `https://api.maptiler.com/maps/hybrid/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY}`,
   {
@@ -108,16 +105,18 @@ L.tileLayer(
 
 let markersLayer = L.layerGroup().addTo(map);
 
+/* STATE */
+let quakeStore = {};
+let lastEventId = null;
+let returnTimeout = null;
+
 /* DEFAULT VIEW */
 const DEFAULT_VIEW = {
   center: [20, 0],
   zoom: 2
 };
 
-let returnTimeout = null;
-let lastEventId = null;
-
-/* SIZE BY MAG */
+/* SIZE */
 function getSize(mag, base) {
   if (!mag || mag < 2) return base;
   if (mag < 3) return base + 2;
@@ -126,7 +125,7 @@ function getSize(mag, base) {
   return base + 8;
 }
 
-/* CREATE MARKER */
+/* MARKER */
 function createMarker(lat, lon, type, mag) {
   let size = 10;
 
@@ -157,7 +156,7 @@ function createMarker(lat, lon, type, mag) {
   });
 }
 
-/* FOCUS + RETURN */
+/* ZOOM */
 function focusOn(lat, lon) {
   map.flyTo([lat, lon], 5, { duration: 2 });
 
@@ -168,7 +167,25 @@ function focusOn(lat, lon) {
   }, 60000);
 }
 
-/* LOAD DATA */
+/* PROCESS DATA */
+function processData(data) {
+
+  // merge do cache
+  data.features.forEach(f => {
+    quakeStore[f.id] = f;
+  });
+
+  // premena na array
+  let merged = Object.values(quakeStore);
+
+  // sort podľa času
+  merged.sort((a, b) => b.properties.time - a.properties.time);
+
+  // vezmi top 20
+  return merged.slice(0, 20);
+}
+
+/* LOAD */
 function loadData() {
   fetch(API_URL)
     .then(r => r.json())
@@ -176,7 +193,7 @@ function loadData() {
 
       if (!data.features) return;
 
-      let features = data.features.slice(0, 20);
+      let features = processData(data);
 
       markersLayer.clearLayers();
 
@@ -226,6 +243,7 @@ function loadData() {
     .catch(err => console.log(err));
 }
 
+/* INIT */
 loadData();
 setInterval(loadData, 60000);
 </script>
