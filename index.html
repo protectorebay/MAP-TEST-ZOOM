@@ -109,6 +109,7 @@ let markersLayer = L.layerGroup().addTo(map);
 let quakeStore = {};
 let lastEventId = null;
 let returnTimeout = null;
+let lastMoveTime = 0;
 
 /* DEFAULT VIEW */
 const DEFAULT_VIEW = {
@@ -156,32 +157,36 @@ function createMarker(lat, lon, type, mag) {
   });
 }
 
-/* ZOOM */
+/* OPTIMIZED FOCUS */
 function focusOn(lat, lon) {
-  map.flyTo([lat, lon], 5, { duration: 2 });
+
+  let currentZoom = map.getZoom();
+  let targetZoom = currentZoom < 3 ? 3 : currentZoom;
+
+  map.flyTo([lat, lon], targetZoom, {
+    duration: 1.5,
+    easeLinearity: 0.25
+  });
 
   if (returnTimeout) clearTimeout(returnTimeout);
 
   returnTimeout = setTimeout(() => {
-    map.flyTo(DEFAULT_VIEW.center, DEFAULT_VIEW.zoom, { duration: 2 });
-  }, 60000);
+    map.flyTo(DEFAULT_VIEW.center, DEFAULT_VIEW.zoom, {
+      duration: 2
+    });
+  }, 30000);
 }
 
 /* PROCESS DATA */
 function processData(data) {
-
-  // merge do cache
   data.features.forEach(f => {
     quakeStore[f.id] = f;
   });
 
-  // premena na array
   let merged = Object.values(quakeStore);
 
-  // sort podľa času
   merged.sort((a, b) => b.properties.time - a.properties.time);
 
-  // vezmi top 20
   return merged.slice(0, 20);
 }
 
@@ -220,7 +225,10 @@ function loadData() {
           if (currentId !== lastEventId) {
             lastEventId = currentId;
 
-            if (props.mag >= 5) {
+            let now = Date.now();
+
+            if (props.mag >= 1.5 && (now - lastMoveTime > 20000)) {
+              lastMoveTime = now;
               focusOn(coords[1], coords[0]);
             }
           }
