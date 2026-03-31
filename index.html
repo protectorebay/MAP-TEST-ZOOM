@@ -18,6 +18,11 @@ html, body {
   background: black;
 }
 
+/* FIX WHITE GRID */
+.leaflet-container {
+  background: black !important;
+}
+
 #map {
   width: 100%;
   height: 100%;
@@ -164,7 +169,7 @@ function focusOn(lat, lon) {
   let targetZoom = currentZoom < 3 ? 3 : currentZoom;
 
   map.flyTo([lat, lon], targetZoom, {
-    duration: 1.5,
+    duration: 3,   // ← SPOMALENE
     easeLinearity: 0.25
   });
 
@@ -172,7 +177,7 @@ function focusOn(lat, lon) {
 
   returnTimeout = setTimeout(() => {
     map.flyTo(DEFAULT_VIEW.center, DEFAULT_VIEW.zoom, {
-      duration: 2
+      duration: 3   // ← SPOMALENE AJ SPÄŤ
     });
   }, 30000);
 }
