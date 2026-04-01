@@ -18,7 +18,6 @@ html, body {
   background: black;
 }
 
-/* FIX WHITE GRID */
 .leaflet-container {
   background: black !important;
 }
@@ -28,7 +27,6 @@ html, body {
   height: 100%;
 }
 
-/* REMOVE LEAFLET BOX */
 .leaflet-tooltip {
   background: transparent !important;
   border: none !important;
@@ -38,7 +36,6 @@ html, body {
   display: none;
 }
 
-/* LABEL */
 .label {
   background: rgba(0,0,0,0.75);
   color: white;
@@ -50,7 +47,6 @@ html, body {
   line-height: 1.2;
 }
 
-/* MARKERS */
 .marker {
   border-radius: 50%;
   position: relative;
@@ -60,7 +56,6 @@ html, body {
 .orange { background: orange; }
 .blue { background: #00aaff; }
 
-/* PULSE */
 .pulse::after {
   content: "";
   position: absolute;
@@ -169,7 +164,7 @@ function focusOn(lat, lon) {
   let targetZoom = currentZoom < 3 ? 3 : currentZoom;
 
   map.flyTo([lat, lon], targetZoom, {
-    duration: 3,   // ← SPOMALENE
+    duration: 3,
     easeLinearity: 0.25
   });
 
@@ -177,9 +172,9 @@ function focusOn(lat, lon) {
 
   returnTimeout = setTimeout(() => {
     map.flyTo(DEFAULT_VIEW.center, DEFAULT_VIEW.zoom, {
-      duration: 3   // ← SPOMALENE AJ SPÄŤ
+      duration: 3
     });
-  }, 30000);
+  }, 300000); // ← 5 MINUTES
 }
 
 /* PROCESS DATA */
@@ -232,7 +227,7 @@ function loadData() {
 
             let now = Date.now();
 
-            if (props.mag >= 1.5 && (now - lastMoveTime > 20000)) {
+            if (props.mag >= 0.5 && (now - lastMoveTime > 20000)) {
               lastMoveTime = now;
               focusOn(coords[1], coords[0]);
             }
